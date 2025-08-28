@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  url-shortener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: url-shortener-app
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=11.142.154.110
+      - DB_PORT=3306
+      - DB_NAME=6n9pyl60
+      - DB_USERNAME=with_racdjgzrtmhgtadh
+      - DB_PASSWORD=K#2C@Y3pTOpOJu
+      - BASE_DOMAIN=localhost:8000
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - url-shortener-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: Local MySQL for development
+  mysql-dev:
+    image: mysql:8.0
+    container_name: url-shortener-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=urlshortener
+      - MYSQL_USER=urluser
+      - MYSQL_PASSWORD=urlpassword
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - url-shortener-network
+    restart: unless-stopped
+    profiles:
+      - dev
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: url-shortener-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - url-shortener-network
+    restart: unless-stopped
+    profiles:
+      - cache
+
+networks:
+  url-shortener-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - 短链接生成器</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-link text-3xl"></i>
+                    <h1 class="text-3xl font-bold">URL Shortener</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="statsBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-chart-bar mr-2"></i>统计
+                    </button>
+                    <button id="adminBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-cog mr-2"></i>管理
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- URL Shortener Form -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl card-shadow p-8 mb-8">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">将长链接转换为短链接</h2>
+                    <p class="text-gray-600">快速、安全、可靠的URL缩短服务</p>
+                </div>
+
+                <form id="shortenForm" class="space-y-6">
+                    <div>
+                        <label for="longUrl" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-globe mr-2"></i>原始URL
+                        </label>
+                        <input type="url" id="longUrl" name="longUrl" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="https://www.example.com/very/long/url">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="customAlias" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-edit mr-2"></i>自定义别名 (可选)
+                            </label>
+                            <input type="text" id="customAlias" name="customAlias"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="my-custom-link" maxlength="10">
+                        </div>
+
+                        <div>
+                            <label for="expiresAt" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar mr-2"></i>过期时间 (可选)
+                            </label>
+                            <input type="datetime-local" id="expiresAt" name="expiresAt"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submitBtn"
+                            class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105">
+                        <i class="fas fa-magic mr-2"></i>生成短链接
+                    </button>
+                </form>
+
+                <!-- Result Section -->
+                <div id="resultSection" class="hidden mt-8 p-6 bg-green-50 border border-green-200 rounded-lg animate-fade-in">
+                    <h3 class="text-lg font-semibold text-green-800 mb-4">
+                        <i class="fas fa-check-circle mr-2"></i>短链接生成成功！
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white p-3 rounded border">
+                            <span class="text-sm text-gray-600">短链接:</span>
+                            <div class="flex items-center space-x-2">
+                                <span id="shortUrl" class="font-mono text-blue-600"></span>
+                                <button id="copyBtn" class="text-blue-500 hover:text-blue-700">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between bg-white p-3 rounded border">
+                            <span class="text-sm text-gray-600">原始链接:</span>
+                            <span id="originalUrl" class="font-mono text-gray-800 truncate max-w-xs"></span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white p-3 rounded border">
+                            <span class="text-sm text-gray-600">创建时间:</span>
+                            <span id="createdAt" class="text-gray-800"></span>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex space-x-3">
+                        <button id="testLinkBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-external-link-alt mr-2"></i>测试链接
+                        </button>
+                        <button id="viewStatsBtn" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition-colors">
+                            <i class="fas fa-chart-line mr-2"></i>查看统计
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent URLs -->
+            <div class="bg-white rounded-xl card-shadow p-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-history mr-2"></i>最近创建的链接
+                </h3>
+                <div id="recentUrls" class="space-y-3">
+                    <!-- Recent URLs will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-chart-bar mr-2"></i>系统统计
+                </h3>
+                <button id="closeStatsModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="statsContent" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Stats content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-4xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-cog mr-2"></i>管理面板
+                </h3>
+                <button id="closeAdminModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-6">
+                <div class="flex space-x-4">
+                    <button id="cleanupBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>清理过期链接
+                    </button>
+                    <button id="refreshAdminBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-sync mr-2"></i>刷新
+                    </button>
+                </div>
+                <div id="adminContent">
+                    <!-- Admin content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <span class="text-gray-700">处理中...</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
