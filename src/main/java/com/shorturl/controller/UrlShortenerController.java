@@ -44,17 +44,6 @@ public class UrlShortenerController {
         logger.info("Received request to shorten URL: {}", request.getUrl());
         
         try {
-            // Validate URL format
-            if (request.getUrl() == null || request.getUrl().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            
-            // Basic URL validation
-            String url = request.getUrl().trim();
-            if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            
             ShortenUrlResponse response = urlShortenerService.shortenUrl(request);
             
             // Build full short URL with domain
@@ -62,9 +51,6 @@ public class UrlShortenerController {
             response.setShortUrl(baseUrl + "/" + response.getShortUrl());
             
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid URL format: {}", request.getUrl(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             logger.error("Error shortening URL: {}", request.getUrl(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -198,7 +184,7 @@ public class UrlShortenerController {
         return url.toString();
     }
 
-    /**
+/**
      * Global exception handler
      */
     @ExceptionHandler(UrlNotFoundException.class)
@@ -206,6 +192,20 @@ public class UrlShortenerController {
         Map<String, String> response = new HashMap<>();
         response.put("error", e.getMessage());
         return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException e) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid request data");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(Exception.class)
